@@ -48,42 +48,15 @@ echo "Installing $LATEST ..."
 
 TARBALL="$LATEST.$OS-$ARCH.tar.gz"
 URL="https://go.dev/dl/$TARBALL"
-CHECKSUM_URL="https://go.dev/dl/$LATEST.$OS-$ARCH.tar.gz.sha256"
 
 TMP_FILE="/tmp/$TARBALL"
-TMP_SUM="/tmp/$TARBALL.sha256"
 
 echo "Downloading $URL ..."
 if command -v curl > /dev/null 2>&1;then
   curl -fSL "$URL" -o "$TMP_FILE"
-  curl -fSL "$CHECKSUM_URL" -o "$TMP_SUM"
 else
   wget -O "$TMP_FILE" "$URL"
-  wget -O "$TMP_SUM" "$CHECKSUM_URL"
 fi
-
-echo "verifying SHA256 checksum ..."
-
-EXPECTED=$(cat "$TMP_SUM" | awk '{print $1}')
-
-if command -v sha256sum > /dev/null 2>&1;then
-  ACTUAL=$(sha256sum "$TMP_FILE" | awk '{print $1}')
-elif command -v shasum > /dev/null 2>&1;then
-  ACTUAL=$(shasum -a 256 "$TMP_FILE" | awk '{print $1}')
-else
-  echo "Error: sha256sum or shasum is required YET NOT FOUND!"
-  exit 1
-fi
-
-if [ "$EXPECTED" != "$ACTUAL" ];then
-  echo "Checksum verification FAILED!"
-  echo "Expected: $EXPECTED"
-  echo "Actual: $ACTUAL"
-  rm -f "$TMP_FILE" "$TMP_SUM"
-  exit 1
-fi
-
-echo "Checksum verified."
 
 if [ -d "$GO_DIR" ];then
   echo "Removing old Go installation... "
@@ -93,7 +66,7 @@ fi
 echo "Extracting to $INSTALL_DIR ..."
 sudo tar -C "$INSTALL_DIR" -xzf "$TMP_FILE"
 
-rm -f "$TMP_FILE" "$TMP_SUM"
+rm -f "$TMP_FILE"
 
 echo "Go installed successfully."
 
@@ -115,13 +88,13 @@ add_go_to_path() {
             else
                 echo 'export PATH=$PATH:/usr/local/go/bin' >> "$CONFIG_FILE"
             fi
-            echo "Reloading config to use updated PATH..."
-            source $CONFIG_FILE;
-            #echo "Done. Please restart your $SHELL_NAME shell to update PATH."
+            #echo "Reloading config to use updated PATH..."
+            #source $CONFIG_FILE;
+            echo "Done. Please restart your $SHELL_NAME shell to update PATH."
         else
             echo "$SHELL_NAME config already has Go in PATH"
         fi
-        
+
         # Go workspace
         if ! grep -q "$HOME/go/bin" "$CONFIG_FILE"; then
             echo ""
@@ -137,9 +110,9 @@ add_go_to_path() {
                 echo 'export GOPATH=$HOME/go' >> "$CONFIG_FILE"
                 echo 'export PATH=$PATH:$GOPATH/bin' >> "$CONFIG_FILE"
             fi
-            echo "Reloading config to use updated PATH..."
-            source $CONFIG_FILE;
-            #echo "Done. Please restart your $SHELL_NAME shell to update PATH."
+            #echo "Reloading config to use updated PATH..."
+            #source $CONFIG_FILE;
+            echo "Done. Please restart your $SHELL_NAME shell to update PATH."
         else
             echo "$SHELL_NAME config already has Go workspace in PATH"
         fi
