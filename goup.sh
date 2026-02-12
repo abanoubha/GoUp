@@ -48,25 +48,52 @@ echo "Installing $LATEST ..."
 
 TARBALL="$LATEST.$OS-$ARCH.tar.gz"
 URL="https://go.dev/dl/$TARBALL"
+CHECKSUM_URL="https://go.dev/dl/$LATEST.$OS-$ARCH.tar.gz.sha256"
 
 TMP_FILE="/tmp/$TARBALL"
+TMP_SUM="/tmp/$TARBALL.sha256"
 
 echo "Downloading $URL ..."
 if command -v curl > /dev/null 2>&1;then
   curl -fSL "$URL" -o "$TMP_FILE"
+  curl -fSL "$CHECKSUM_URL" -o "$TMP_SUM"
 else
   wget -O "$TMP_FILE" "$URL"
+  wget -O "$TMP_SUM" "$CHECKSUM_URL"
 fi
 
-echo "Removing old Go installation (if any) ... "
+echo "verifying SHA256 checksum ..."
+
+EXPECTED=$(cat "$TMP_SUM" | awk '{print $1}')
+
+if command -v sha256sum > /dev/null 2>&1;then
+  ACTUAL=$(sha256sum "$TMP_FILE" | awk '{print $1}')
+elif command -v shasum > /dev/null 2>&1;then
+  ACTUAL=$(shasum -a 256 "$TMP_FILE" | awk '{print $1}')
+else
+  echo "Error: sha256sum or shasum is required YET NOT FOUND!"
+  exit 1
+fi
+
+if [ "$EXPECTED" != "$ACTUAL" ];then
+  echo "Checksum verification FAILED!"
+  echo "Expected: $EXPECTED"
+  echo "Actual: $ACTUAL"
+  rm -f "$TMP_FILE" "$TMP_SUM"
+  exit 1
+fi
+
+echo "Checksum verified."
+
 if [ -d "$GO_DIR" ];then
+  echo "Removing old Go installation... "
   sudo rm -rf "$GO_DIR"
 fi
 
 echo "Extracting to $INSTALL_DIR ..."
 sudo tar -C "$INSTALL_DIR" -xzf "$TMP_FILE"
 
-rm -f "$TMP_FILE"
+rm -f "$TMP_FILE" "$TMP_SUM"
 
 echo "Go installed successfully."
 
