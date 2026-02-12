@@ -97,14 +97,57 @@ rm -f "$TMP_FILE" "$TMP_SUM"
 
 echo "Go installed successfully."
 
-if echo "$PATH" | grep -q "$GO_DIR/bin";then
-  :
-else
-  echo ""
-  echo "WARNING: $GO_DIR/bin is not in your PATH."
-  echo "Add this line to your profile (~/.profile or ~/.bashrc):"
-  echo "export PATH=\$PATH:$GO_DIR/bin"
+add_go_to_path() {
+    SHELL_NAME=$1
+    CONFIG_FILE=$2
+    SHELL_COMMENT=$3
+
+    if [ -f "$CONFIG_FILE" ]; then
+        if ! grep -q '/usr/local/go/bin' "$CONFIG_FILE"; then
+            echo ""
+            echo "Adding /usr/local/go/bin to $SHELL_NAME config ($CONFIG_FILE)..."
+            echo '' >> "$CONFIG_FILE"
+            echo "# Added by GoUp: $SHELL_COMMENT" >> "$CONFIG_FILE"
+            if [ "$SHELL_NAME" = "fish" ]; then
+                echo 'set -gx PATH $PATH /usr/local/go/bin' >> "$CONFIG_FILE"
+                # more modern version (v4+)
+                #echo 'fish_add_path -U /usr/local/go/bin' >> "$CONFIG_FILE"
+            else
+                echo 'export PATH=$PATH:/usr/local/go/bin' >> "$CONFIG_FILE"
+            fi
+            echo "Updating PATH..."
+            source $CONFIG_FILE;
+            #echo "Done. Please restart your $SHELL_NAME shell to update PATH."
+        else
+            echo "$SHELL_NAME config already has Go in PATH"
+        fi
+    else
+        echo "Warning: $SHELL_NAME config file $CONFIG_FILE not found. You may need to add Go to PATH manually."
+    fi
+}
+
+# -------- Check bash --------
+if command -v bash >/dev/null 2>&1; then
+    if [ -f "$HOME/.bashrc" ]; then
+        add_go_to_path "bash" "$HOME/.bashrc" "bashrc"
+    elif [ -f "$HOME/.profile" ]; then
+        add_go_to_path "bash" "$HOME/.profile" "profile"
+    fi
 fi
+
+# -------- Check zsh --------
+if command -v zsh >/dev/null 2>&1; then
+    if [ -f "$HOME/.zshrc" ]; then
+        add_go_to_path "zsh" "$HOME/.zshrc" "zshrc"
+    fi
+fi
+
+# -------- Check fish --------
+if command -v fish >/dev/null 2>&1; then
+    FISH_CONFIG="$HOME/.config/fish/config.fish"
+    add_go_to_path "fish" "$FISH_CONFIG" "config.fish"
+fi
+
 
 echo ""
 echo "Installed version:"
