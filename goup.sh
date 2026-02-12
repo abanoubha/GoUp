@@ -115,7 +115,7 @@ add_go_to_path() {
             else
                 echo 'export PATH=$PATH:/usr/local/go/bin' >> "$CONFIG_FILE"
             fi
-            echo "Updating PATH..."
+            echo "Reloading config to use updated PATH..."
             source $CONFIG_FILE;
             #echo "Done. Please restart your $SHELL_NAME shell to update PATH."
         else
