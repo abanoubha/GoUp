@@ -10,6 +10,12 @@ Use the script directly by downloading it into sh to run it:
 curl -fsSL https://raw.githubusercontent.com/abanoubha/GoUp/main/goup.sh | sh
 ```
 
+or using `wget` like this:
+
+```sh
+wget -qO- https://raw.githubusercontent.com/abanoubha/GoUp/main/goup.sh | sh
+```
+
 ## How GoUp works ?
 
 Check the script, it's simple.
